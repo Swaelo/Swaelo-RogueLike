@@ -16,6 +16,8 @@ public class DungeonRoom
     public int Width;   //Width of the room in tiles
     public int Height;  //Height of the room in tiles
 
+    public Vector2 Center;  //Center point of the room
+
     //Initializes a new DungeonRoom object with the given values
     public DungeonRoom(int X, int Y, int W, int H)
     {
@@ -25,6 +27,7 @@ public class DungeonRoom
         MaxY = Y + H;
         Width = W;
         Height = H;
+        Center = new Vector2(X + Width * 0.5f, Y + Height * 0.5f);
     }
 
     //Sets up the room to be displayed
@@ -35,7 +38,43 @@ public class DungeonRoom
         {
             for (int y = MinY; y < MaxY; y++)
             {
-                Dungeon.Instance.Tiles[new Vector2(x, y)].SetType(DungeonTile.TileType.RoomTile);
+                //Grab the tile being initialised
+                DungeonTile Tile = Dungeon.Instance.Tiles[new Vector2(x, y)];
+
+                //Check which side of the room this tile lies on
+                bool IsLeft = x == MinX;
+                bool IsRight = x == MaxX - 1;
+                bool IsBottom = y == MinY;
+                bool IsTop = y == MaxY - 1;
+
+                //Set the tiles type based on which sides of the room its on
+                //Top-Left Corner
+                if (IsTop && IsLeft && !IsRight && !IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomTopLeftTile);
+                //Top Wall
+                else if (IsTop && !IsLeft && !IsRight && !IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomTopTile);
+                //Top-Right Corner
+                else if (IsTop && !IsLeft && IsRight && !IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomTopRightTile);
+                //Right Wall
+                else if (!IsTop && !IsLeft && IsRight && !IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomRightTile);
+                //Bottom-Right Corner
+                else if (!IsTop && !IsLeft && IsRight && IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomBottomRightTile);
+                //Bottom Wall
+                else if (!IsTop && !IsLeft && !IsRight && IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomBottomTile);
+                //Bottom-Left Corner
+                else if (!IsTop && IsLeft && !IsRight && IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomBottomLeftTile);
+                //Left Wall
+                else if (!IsTop && IsLeft && !IsRight && !IsBottom)
+                    Tile.SetType(DungeonTile.TileType.RoomLeftTile);
+                //Middle Tile
+                else
+                    Tile.SetType(DungeonTile.TileType.RoomMiddleTile);
             }
         }
     }

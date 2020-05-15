@@ -12,7 +12,15 @@ public class DungeonTile : MonoBehaviour
     public enum TileType
     {
         EmptyTile = 0,
-        RoomTile = 1
+        RoomMiddleTile = 1,
+        RoomTopTile = 2,
+        RoomTopRightTile = 3,
+        RoomRightTile = 4,
+        RoomBottomRightTile = 5,
+        RoomBottomTile = 6,
+        RoomBottomLeftTile = 7,
+        RoomLeftTile = 8,
+        RoomTopLeftTile = 9
     }
 
     //Stores the sprites for each tile type

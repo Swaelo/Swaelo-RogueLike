@@ -52,33 +52,44 @@ public class Dungeon : MonoBehaviour
         //Try placing the maximum amount of rooms
         for(int i = 0; i < MaxRoomCount; i++)
         {
-            //Create random values for each new room
-            int RoomWidth = Random.Range(MinRoomSize, MaxRoomSize + 1);
-            int RoomHeight = Random.Range(MinRoomSize, MaxRoomSize + 1);
-            int RoomXPos = Random.Range(0, Width - 1);
-            int RoomYPos = Random.Range(0, Height - 1);
-
-            //Setup a new room with these values
-            DungeonRoom NewRoom = new DungeonRoom(RoomXPos, RoomYPos, RoomWidth, RoomHeight);
-
-            //Check to make sure this room doesnt intersect with any of the others that have already been setup
-            bool Intersects = false;
-            foreach(DungeonRoom OtherRoom in Rooms)
+            //Give each room maximum number of 10 attempts to find an open available spot before giving up
+            int PlacementAttempts = 1;
+            bool RoomPlaced = false;
+            while(PlacementAttempts < 10 && !RoomPlaced)
             {
-                //Stop check and exit the loop if any pair of rooms are found to intersect with each other
-                if(NewRoom.Intersects(OtherRoom))
-                {
-                    Intersects = true;
-                    break;
-                }
-            }
-
-            //If the room wasnt found to intersect with any others, initialize it and add it to the list with all the others
-            if(!Intersects)
-            {
-                NewRoom.Init();
-                Rooms.Add(NewRoom);
+                RoomPlaced = AddRoom(MinRoomSize, MaxRoomSize);
+                PlacementAttempts++;
             }
         }
+    }
+
+    //Tries to place a random room onto the floor
+    private bool AddRoom(int MinSize, int MaxSize)
+    {
+        //Get a random size
+        int RoomWidth = Random.Range(MinSize, MaxSize + 1);
+        int RoomHeight = Random.Range(MinSize, MaxSize + 1);
+
+        //Get a random position, making sure it fits inside the current grid size
+        int RoomXPos = Random.Range(RoomWidth, Width - RoomWidth - 1);
+        int RoomYPos = Random.Range(RoomHeight, Height - RoomHeight - 1);
+
+        //Setup a new room with these values
+        DungeonRoom NewRoom = new DungeonRoom(RoomXPos, RoomYPos, RoomWidth, RoomHeight);
+
+        //Check to make sure this room doesnt intersect with any other already existing rooms
+        foreach(DungeonRoom OtherRoom in Rooms)
+        {
+            if(NewRoom.Intersects(OtherRoom))
+            {
+                //Exit out without finalizing the room creation if this space isnt available
+                return false;
+            }
+        }
+
+        //Initialize this room if the space is available
+        NewRoom.Init();
+        Rooms.Add(NewRoom);
+        return true;
     }
 }

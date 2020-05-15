@@ -99,5 +99,22 @@ MonoBehaviour:
     Sprite: {fileID: 21300000, guid: 57d3c2e467c87e54c9a37ce75dcb73e9, type: 3}
   - Type: 1
     Sprite: {fileID: 21300000, guid: 12448488355d61241ab0bb53d483d4a6, type: 3}
+  - Type: 2
+    Sprite: {fileID: 21300000, guid: 45209ebac018acc4d89a4bc78ebc68e2, type: 3}
+  - Type: 3
+    Sprite: {fileID: 21300000, guid: 7aee4d0de520a8741983b2cb71702d76, type: 3}
+  - Type: 4
+    Sprite: {fileID: 21300000, guid: c101d2af6a57fe644bb709052ca34b64, type: 3}
+  - Type: 5
+    Sprite: {fileID: 21300000, guid: 7b588ff4d7e9f6b46bbb5e67840b2dd9, type: 3}
+  - Type: 6
+    Sprite: {fileID: 21300000, guid: d81814f99599f6d48bd26a2cd07ed002, type: 3}
+  - Type: 7
+    Sprite: {fileID: 21300000, guid: f50f68ee33279904b802f7aa00f6f1d3, type: 3}
+  - Type: 8
+    Sprite: {fileID: 21300000, guid: 35c3976162e4bf14293eb659fd7c0c14, type: 3}
+  - Type: 9
+    Sprite: {fileID: 21300000, guid: 7d2d7c484485d9d44885d3b48e60d028, type: 3}
+  GridPos: {x: 0, y: 0}
   Type: 0
   Renderer: {fileID: 8344560190051751831}

@@ -175,7 +175,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 18
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -251,11 +251,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DungeonTilePrefab: {fileID: 391926483356220092, guid: 1eb111206c95c0242bbfd63c9fdd0c1b,
     type: 3}
-  MaxRooms: 2
+  MaxRooms: 6
   MinRoomSize: 2
-  MaxRoomSize: 2
-  DungeonWidth: 16
-  DungeonHeight: 16
+  MaxRoomSize: 6
+  DungeonWidth: 32
+  DungeonHeight: 32
 --- !u!4 &410876583
 Transform:
   m_ObjectHideFlags: 0
