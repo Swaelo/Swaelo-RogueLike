@@ -14,6 +14,11 @@ public class CameraMovement : MonoBehaviour
     private float YPos = 0f;   //Cameras Y Position
     private float Zoom = 5;    //Cameras zoom level
 
+    private void Start()
+    {
+        Zoom = GetComponent<Camera>().orthographicSize;
+    }
+
     private void Update()
     {
         //Adjust X/Y pos and Zoom level

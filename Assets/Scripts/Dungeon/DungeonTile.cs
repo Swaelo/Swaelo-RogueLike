@@ -20,7 +20,8 @@ public class DungeonTile : MonoBehaviour
         RoomBottomTile = 6,
         RoomBottomLeftTile = 7,
         RoomLeftTile = 8,
-        RoomTopLeftTile = 9
+        RoomTopLeftTile = 9,
+        CorridorTile = 10
     }
 
     //Stores the sprites for each tile type

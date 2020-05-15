@@ -251,9 +251,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   DungeonTilePrefab: {fileID: 391926483356220092, guid: 1eb111206c95c0242bbfd63c9fdd0c1b,
     type: 3}
-  MaxRooms: 6
+  MaxRooms: 12
   MinRoomSize: 2
-  MaxRoomSize: 6
+  MaxRoomSize: 4
   DungeonWidth: 32
   DungeonHeight: 32
 --- !u!4 &410876583

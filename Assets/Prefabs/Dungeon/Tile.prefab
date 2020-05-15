@@ -115,6 +115,8 @@ MonoBehaviour:
     Sprite: {fileID: 21300000, guid: 35c3976162e4bf14293eb659fd7c0c14, type: 3}
   - Type: 9
     Sprite: {fileID: 21300000, guid: 7d2d7c484485d9d44885d3b48e60d028, type: 3}
+  - Type: 10
+    Sprite: {fileID: 21300000, guid: 40366d90c9113dd41a0eb7c42635706f, type: 3}
   GridPos: {x: 0, y: 0}
   Type: 0
   Renderer: {fileID: 8344560190051751831}

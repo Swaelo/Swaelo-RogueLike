@@ -5,6 +5,7 @@
 // ================================================================================================================================
 
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 using UnityEngine;
 
 public class Dungeon : MonoBehaviour
@@ -52,44 +53,94 @@ public class Dungeon : MonoBehaviour
         //Try placing the maximum amount of rooms
         for(int i = 0; i < MaxRoomCount; i++)
         {
-            //Give each room maximum number of 10 attempts to find an open available spot before giving up
-            int PlacementAttempts = 1;
-            bool RoomPlaced = false;
-            while(PlacementAttempts < 10 && !RoomPlaced)
+            //Get a random size for the new room
+            int RoomWidth = Random.Range(MinRoomSize, MaxRoomSize + 1);
+            int RoomHeight = Random.Range(MinRoomSize, MaxRoomSize + 1);
+
+            //Get a random position for the new room, making sure it stays within the dungeon grid
+            int RoomXPos = Random.Range(RoomWidth, Width - RoomWidth - 1);
+            int RoomYPos = Random.Range(RoomHeight, Height - RoomHeight - 1);
+
+            //Setup a new room with these values
+            DungeonRoom NewRoom = new DungeonRoom(RoomXPos, RoomYPos, RoomWidth, RoomHeight);
+
+            //Check to make sure this room doesnt intersect with any others
+            bool Intersects = false;
+            foreach(DungeonRoom OtherRoom in Rooms)
             {
-                RoomPlaced = AddRoom(MinRoomSize, MaxRoomSize);
-                PlacementAttempts++;
+                if(NewRoom.RoomsOverlapping(OtherRoom))
+                {
+                    //Set flag and break out if the room is found to intersect with another
+                    Intersects = true;
+                    break;
+                }
+            }
+
+            //Initialize the new room and add it to the list with the others if its space is available
+            if(!Intersects)
+            {
+                //Setup the new room
+                NewRoom.Init();
+
+                //Store new room center location
+                Vector2 NewCenter = NewRoom.Center;
+
+                if(Rooms.Count != 0)
+                {
+                    //Store center of the previous room
+                    Vector2 PrevCenter = Rooms[Rooms.Count - 1].Center;
+
+                    //Carve out corridors between these two rooms center locations
+                    //Randomly start with either vertical or horizontal corridor first
+                    if(Random.value >= 0.5f)
+                    {
+                        CreateHorizontalCorridor(PrevCenter.x, NewCenter.x, PrevCenter.y);
+                        CreateVerticalCorridor(PrevCenter.y, NewCenter.y, NewCenter.x);
+                    }
+                    else
+                    {
+                        CreateVerticalCorridor(PrevCenter.y, NewCenter.y, PrevCenter.x);
+                        CreateHorizontalCorridor(PrevCenter.x, NewCenter.x, NewCenter.y);
+                    }
+                }
+
+                //Store the new room in the list with the others
+                Rooms.Add(NewRoom);
             }
         }
     }
 
-    //Tries to place a random room onto the floor
-    private bool AddRoom(int MinSize, int MaxSize)
+    //Creates a horizontal corridor to connect two rooms together
+    public void CreateHorizontalCorridor(float XStart, float XEnd, float Y)
     {
-        //Get a random size
-        int RoomWidth = Random.Range(MinSize, MaxSize + 1);
-        int RoomHeight = Random.Range(MinSize, MaxSize + 1);
-
-        //Get a random position, making sure it fits inside the current grid size
-        int RoomXPos = Random.Range(RoomWidth, Width - RoomWidth - 1);
-        int RoomYPos = Random.Range(RoomHeight, Height - RoomHeight - 1);
-
-        //Setup a new room with these values
-        DungeonRoom NewRoom = new DungeonRoom(RoomXPos, RoomYPos, RoomWidth, RoomHeight);
-
-        //Check to make sure this room doesnt intersect with any other already existing rooms
-        foreach(DungeonRoom OtherRoom in Rooms)
+        //Go along the line of tiles needing to be changed into corridors
+        float XMin = Mathf.Min(XStart, XEnd);
+        float XMax = Mathf.Max(XStart, XEnd);
+        for(int X = (int)XMin; X < XMax + 1; X++)
         {
-            if(NewRoom.Intersects(OtherRoom))
-            {
-                //Exit out without finalizing the room creation if this space isnt available
-                return false;
-            }
-        }
+            //Grab each tile in the line
+            DungeonTile Tile = Tiles[new Vector2(X, Y)];
 
-        //Initialize this room if the space is available
-        NewRoom.Init();
-        Rooms.Add(NewRoom);
-        return true;
+            //Change empty tiles into corridor tiles
+            if (Tile.Type == DungeonTile.TileType.EmptyTile)
+                Tile.SetType(DungeonTile.TileType.CorridorTile);
+        }
+    }
+
+    //Creates a vertical corridor to connect two rooms together
+    public void CreateVerticalCorridor(float YStart, float YEnd, float X)
+    {
+        //Go along the line of tiles needing to be changed into corridors
+        float YMin = Mathf.Min(YStart, YEnd);
+        float YMax = Mathf.Max(YStart, YEnd);
+        for(int Y = (int)YMin; Y < YMax + 1; Y++)
+        {
+            //Grab each tile in the line
+            DungeonTile Tile = Tiles[new Vector2(X, Y)];
+
+            //Change empty tiles into corridor tiles
+            if (Tile.Type == DungeonTile.TileType.EmptyTile)
+                Tile.SetType(DungeonTile.TileType.CorridorTile);
+        }
     }
 }

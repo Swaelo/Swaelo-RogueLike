@@ -27,7 +27,8 @@ public class DungeonRoom
         MaxY = Y + H;
         Width = W;
         Height = H;
-        Center = new Vector2(X + Width * 0.5f, Y + Height * 0.5f);
+        Center = new Vector2(Mathf.Floor((MinX + MaxX) / 2),
+            Mathf.Floor((MinY + MaxY) / 2));
     }
 
     //Sets up the room to be displayed
@@ -79,12 +80,12 @@ public class DungeonRoom
         }
     }
 
-    //Checks if this room intersects with another
-    public bool Intersects(DungeonRoom Other)
+    //Checks to see if this room is either interesting with the other, or sitting directly next to it
+    public bool RoomsOverlapping(DungeonRoom Other)
     {
-        return MinX < Other.MinX + Other.Width &&
-            MinX + Width > Other.MinX &&
-            MinY < Other.MinY + Other.Height &&
-            MinY + Height > Other.MinY;
+        return MinX < Other.MinX + Other.Width + 1 &&
+            MinX + Width + 1 > Other.MinX &&
+            MinY < Other.MinY + Other.Height + 1 &&
+            MinY + Height + 1 > Other.MinY;
     }
 }
