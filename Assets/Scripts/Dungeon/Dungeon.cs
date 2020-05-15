@@ -22,8 +22,13 @@ public class Dungeon : MonoBehaviour
     public Dictionary<Vector2, DungeonTile> Tiles = new Dictionary<Vector2, DungeonTile>();   //Set of all the tiles which make up this dungeon
     public List<DungeonRoom> Rooms = new List<DungeonRoom>(); //List of all rooms inside the dungeon
 
+    public GameObject TilePrefab;   //Prefab used when spawning in all the tiles to setup the dungeon grid
+
+    //Keeps track if rooms have already been placed down, so if told to generate them again we will know to clean up the previous rooms first
+    private bool RoomsCreated = false;
+
     //Sets up the dungeon tiles
-    public void InitializeGrid(int DungeonWidth, int DungeonHeight, GameObject TilePrefab)
+    public void InitializeGrid(int DungeonWidth, int DungeonHeight)
     {
         //Store dungeon size values
         Width = DungeonWidth;
@@ -47,51 +52,89 @@ public class Dungeon : MonoBehaviour
         }
     }
 
+    //Cleans up and removes all of the tiles and rooms making up the current dungeon
+    public void ClearDungeon()
+    {
+        //Remove every tile in the current grid
+        foreach (KeyValuePair<Vector2, DungeonTile> Tile in Tiles)
+            Destroy(Tile.Value.gameObject);
+        Tiles = new Dictionary<Vector2, DungeonTile>();
+        //Reset the list of rooms, and the created already flag
+        Rooms = new List<DungeonRoom>();
+        RoomsCreated = false;
+    }
+
     //Randomly places a bunch of rooms into the dungeon
     public void PlaceRooms(int MaxRoomCount, int MinRoomSize, int MaxRoomSize)
     {
+        //If rooms have already been placed previously, clean up the old rooms before making new ones
+        if(RoomsCreated)
+        {
+            //Go through and return all tiles back to the empty state
+            foreach (KeyValuePair<Vector2, DungeonTile> Tile in Tiles)
+                Tile.Value.SetType(DungeonTile.TileType.EmptyTile);
+            //Reset the rooms list now that none of the previous rooms exist anymore
+            Rooms = new List<DungeonRoom>();
+        }
+
         //Try placing the maximum amount of rooms
         for(int i = 0; i < MaxRoomCount; i++)
+            TryPlaceRoom(MinRoomSize, MaxRoomSize);
+
+        //Remember that some rooms have now been placed down
+        RoomsCreated = true;
+    }
+
+    //Tries randomly placing a new room into the current dungeon grid up to a maximum of 10 times before it gives up
+    private void TryPlaceRoom(int MinRoomSize, int MaxRoomSize)
+    {
+        int PlacementAttempts = 0;  //Tracks how many attempts have been made to place a new room into the dungeon layout
+        bool PlacementComplete = false; //Tracks if a room has been succesfully placed down yet or not
+        
+        //Try placing down a new room 10 times before giving up
+        while(!PlacementComplete && PlacementAttempts < 10)
         {
+            //Track how many attempts have been made to place a new room onto the dungeon grid
+            PlacementAttempts++;
+
             //Get a random size for the new room
             int RoomWidth = Random.Range(MinRoomSize, MaxRoomSize + 1);
             int RoomHeight = Random.Range(MinRoomSize, MaxRoomSize + 1);
 
-            //Get a random position for the new room, making sure it stays within the dungeon grid
+            //Get a random position to place this new room inside the dungeon grid
             int RoomXPos = Random.Range(RoomWidth, Width - RoomWidth - 1);
             int RoomYPos = Random.Range(RoomHeight, Height - RoomHeight - 1);
 
-            //Setup a new room with these values
+            //Setup a new room component with these random values we just generated
             DungeonRoom NewRoom = new DungeonRoom(RoomXPos, RoomYPos, RoomWidth, RoomHeight);
 
-            //Check to make sure this room doesnt intersect with any others
-            bool Intersects = false;
+            //Check to make sure the room doesnt touch or overlap any other rooms that may already exist
+            bool InvalidPlacement = false;
             foreach(DungeonRoom OtherRoom in Rooms)
             {
+                //Half the current placement attempt if this room placement is invalid
                 if(NewRoom.RoomsOverlapping(OtherRoom))
                 {
-                    //Set flag and break out if the room is found to intersect with another
-                    Intersects = true;
+                    InvalidPlacement = true;
                     break;
                 }
             }
 
-            //Initialize the new room and add it to the list with the others if its space is available
-            if(!Intersects)
+            //Finalize the setup of this room if the placement was found to be valid
+            if(!InvalidPlacement)
             {
-                //Setup the new room
+                //Initialize the new room
                 NewRoom.Init();
 
-                //Store new room center location
-                Vector2 NewCenter = NewRoom.Center;
-
+                //If this room isnt the first one being added to this dungeon, add corridors connecting it with the previously added room
                 if(Rooms.Count != 0)
                 {
-                    //Store center of the previous room
+                    //Get the center positions of both the new room and the previous room
+                    Vector2 NewCenter = NewRoom.Center;
                     Vector2 PrevCenter = Rooms[Rooms.Count - 1].Center;
 
-                    //Carve out corridors between these two rooms center locations
-                    //Randomly start with either vertical or horizontal corridor first
+                    //Build corridors between these two locations to connect the two rooms
+                    //Randomly start with either horizontal or vertical corridor first
                     if(Random.value >= 0.5f)
                     {
                         CreateHorizontalCorridor(PrevCenter.x, NewCenter.x, PrevCenter.y);
@@ -104,8 +147,9 @@ public class Dungeon : MonoBehaviour
                     }
                 }
 
-                //Store the new room in the list with the others
+                //Store this new room with the others, then exit out of the function
                 Rooms.Add(NewRoom);
+                return;
             }
         }
     }
