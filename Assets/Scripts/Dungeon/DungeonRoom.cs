@@ -8,45 +8,47 @@ using UnityEngine;
 
 public class DungeonRoom
 {
-    public int MinX;    //XPos Left
-    public int MaxX;    //XPos Right
-    public int MinY;    //YPos Top
-    public int MaxY;    //YPos Bottom
-
-    public int Width;   //Width of the room in tiles
-    public int Height;  //Height of the room in tiles
-
+    public Vector2 RoomSize;    //Width and Height of the room
+    public Vector2 RoomPos; //Rooms grid coordinates
     public Vector2 Center;  //Center point of the room
 
-    //Initializes a new DungeonRoom object with the given values
-    public DungeonRoom(int X, int Y, int W, int H)
+    private Vector2 XRange; //X Axis grid coordinates for furthest Left/Right cells of the room
+    private Vector2 YRange; //Y Axis grid coordinates for furthest Bottom/Top cells of the room
+
+    //Constructor
+    public DungeonRoom(Vector2 Position, Vector2 Size)
     {
-        MinX = X;
-        MaxX = X + W;
-        MinY = Y;
-        MaxY = Y + H;
-        Width = W;
-        Height = H;
-        Center = new Vector2(Mathf.Floor((MinX + MaxX) / 2),
-            Mathf.Floor((MinY + MaxY) / 2));
+        //Store size and pos values
+        RoomPos = Position;
+        RoomSize = Size;
+
+        //Get and store the rooms X/Y ranges
+        XRange = new Vector2(RoomPos.x, RoomPos.x + RoomSize.x);
+        YRange = new Vector2(RoomPos.y, RoomPos.y + RoomSize.y);
+
+        //Find and store center location
+        Center = new Vector2(
+            Mathf.Floor((RoomPos.x + (RoomPos.x + RoomSize.x)) / 2),
+            Mathf.Floor((RoomPos.y + (RoomPos.y + RoomSize.y)) / 2));
+
     }
 
     //Sets up the room to be displayed
     public void Init()
     {
         //Change all the tiles which make up this room into room types
-        for (int x = MinX; x < MaxX; x++)
+        for (int x = (int)XRange.x; x < (int)XRange.y; x++)
         {
-            for (int y = MinY; y < MaxY; y++)
+            for (int y = (int)YRange.x; y < (int)YRange.y; y++)
             {
                 //Grab the tile being initialised
                 DungeonTile Tile = Dungeon.Instance.Tiles[new Vector2(x, y)];
 
                 //Check which side of the room this tile lies on
-                bool IsLeft = x == MinX;
-                bool IsRight = x == MaxX - 1;
-                bool IsBottom = y == MinY;
-                bool IsTop = y == MaxY - 1;
+                bool IsLeft = x == (int)XRange.x;
+                bool IsRight = x == ((int)XRange.y) - 1;
+                bool IsBottom = y == (int)YRange.x;
+                bool IsTop = y == ((int)YRange.y) - 1;
 
                 //Set the tiles type based on which sides of the room its on
                 //Top-Left Corner
@@ -80,12 +82,57 @@ public class DungeonRoom
         }
     }
 
-    //Checks to see if this room is either interesting with the other, or sitting directly next to it
+    //Checks to see if this room is overlapping with the other
     public bool RoomsOverlapping(DungeonRoom Other)
     {
-        return MinX < Other.MinX + Other.Width + 1 &&
-            MinX + Width + 1 > Other.MinX &&
-            MinY < Other.MinY + Other.Height + 1 &&
-            MinY + Height + 1 > Other.MinY;
+        return XRange.x < Other.XRange.x + Other.RoomSize.y &&
+            XRange.x + RoomSize.x > Other.XRange.x &&
+            YRange.x < Other.YRange.x + Other.RoomSize.y &&
+            YRange.x + RoomSize.y > Other.YRange.x;
+    }
+
+    //Checks if this room is sitting adjacent to the other
+    public bool RoomsAdjacent(DungeonRoom Other)
+    {
+        //Return false if the rooms are overlapping one another
+        if (RoomsOverlapping(Other))
+            return false;
+
+        //Check if the rooms are adjacent to each other on the X axis
+        bool AdjacentLeft = XRange.x - 1 == Other.XRange.y;
+        bool AdjacentRight = XRange.y + 1 == Other.XRange.y;
+        //Check if the rooms are adjacent to each other on the Y axis
+        bool AdjacentDown = YRange.x - 1 == Other.YRange.x;
+        bool AdjacentUp = YRange.y + 1 == Other.YRange.y;
+
+        //Return true if the rooms are adjacent on any side
+        return AdjacentLeft || AdjacentRight || AdjacentDown || AdjacentUp;
+    }
+
+    //Returns the grid coordinates of where a room should be placed to be adjacent to this on any specific side
+    public Vector2 GetAdjacentLocation(Vector2 AdjacentRoomSize, Direction RoomDirection)
+    {
+        //Start with the location of the current room
+        Vector2 AdjacentRoomPos = RoomPos;
+
+        //Offset from this location in the given direction
+        switch (RoomDirection)
+        {
+            case (Direction.North):
+                AdjacentRoomPos.y += RoomSize.y;
+                break;
+            case (Direction.East):
+                AdjacentRoomPos.x += RoomSize.x;
+                break;
+            case (Direction.South):
+                AdjacentRoomPos.y -= AdjacentRoomSize.y;
+                break;
+            case (Direction.West):
+                AdjacentRoomPos.x -= AdjacentRoomSize.x;
+                break;
+        }
+
+        //Return the final adjacent room location
+        return AdjacentRoomPos;
     }
 }

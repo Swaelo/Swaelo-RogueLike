@@ -5,8 +5,9 @@
 // ================================================================================================================================
 
 using System.Collections.Generic;
-using System.Runtime.ExceptionServices;
+using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 
 public class Dungeon : MonoBehaviour
 {
@@ -64,29 +65,49 @@ public class Dungeon : MonoBehaviour
         RoomsCreated = false;
     }
 
-    //Randomly places a bunch of rooms into the dungeon
-    public void PlaceRooms(int MaxRoomCount, int MinRoomSize, int MaxRoomSize)
+    //Cleans up any existing dungeon rooms
+    private void CleanupRooms()
+    {
+        //Go through and return all tiles back to the empty state
+        foreach (KeyValuePair<Vector2, DungeonTile> Tile in Tiles)
+            Tile.Value.SetType(DungeonTile.TileType.EmptyTile);
+        //Reset the rooms list now that none of the previous rooms exist anymore
+        Rooms = new List<DungeonRoom>();
+    }
+
+    //Randomly places a bunch of rooms into the dungeon, making sure they're all spaced apart by atleast 1 space
+    public void PlaceRoomsSpaced(int MaxRoomCount, int MinRoomSize, int MaxRoomSize)
     {
         //If rooms have already been placed previously, clean up the old rooms before making new ones
-        if(RoomsCreated)
-        {
-            //Go through and return all tiles back to the empty state
-            foreach (KeyValuePair<Vector2, DungeonTile> Tile in Tiles)
-                Tile.Value.SetType(DungeonTile.TileType.EmptyTile);
-            //Reset the rooms list now that none of the previous rooms exist anymore
-            Rooms = new List<DungeonRoom>();
-        }
+        if (RoomsCreated)
+            CleanupRooms();
 
         //Try placing the maximum amount of rooms
         for(int i = 0; i < MaxRoomCount; i++)
-            TryPlaceRoom(MinRoomSize, MaxRoomSize);
+            TryPlaceSpacedRoom(MinRoomSize, MaxRoomSize);
 
         //Remember that some rooms have now been placed down
         RoomsCreated = true;
     }
 
-    //Tries randomly placing a new room into the current dungeon grid up to a maximum of 10 times before it gives up
-    private void TryPlaceRoom(int MinRoomSize, int MaxRoomSize)
+    //Randomly places a bunch of rooms into the dungeon, making sure they're all touching each other
+    public void PlaceRoomsTouching(int MaxRoomCount, int MinRoomSize, int MaxRoomSize)
+    {
+        //Clean up previous rooms if any already exist
+        if (RoomsCreated)
+            CleanupRooms();
+
+        //Try placing the maximum amount of rooms
+        PlaceFirstRoom(MinRoomSize, MaxRoomSize);
+        for (int i = 1; i < MaxRoomCount; i++)
+            TryPlaceCompactedRoom(MinRoomSize, MaxRoomSize);
+
+        //Remember that some rooms now have been placed down
+        RoomsCreated = true;
+    }
+
+    //Tries randomly placing a new room into the current dungeon grid up to a maximum of 10 times before it gives up, makes sure this rooms is spaced apart from all others by atleast 1 space
+    private void TryPlaceSpacedRoom(int MinRoomSize, int MaxRoomSize)
     {
         int PlacementAttempts = 0;  //Tracks how many attempts have been made to place a new room into the dungeon layout
         bool PlacementComplete = false; //Tracks if a room has been succesfully placed down yet or not
@@ -97,23 +118,19 @@ public class Dungeon : MonoBehaviour
             //Track how many attempts have been made to place a new room onto the dungeon grid
             PlacementAttempts++;
 
-            //Get a random size for the new room
-            int RoomWidth = Random.Range(MinRoomSize, MaxRoomSize + 1);
-            int RoomHeight = Random.Range(MinRoomSize, MaxRoomSize + 1);
-
-            //Get a random position to place this new room inside the dungeon grid
-            int RoomXPos = Random.Range(RoomWidth, Width - RoomWidth - 1);
-            int RoomYPos = Random.Range(RoomHeight, Height - RoomHeight - 1);
+            //Get a random size and position for the new room
+            Vector2 RoomSize = GetRandomRoomSize(MinRoomSize, MaxRoomSize);
+            Vector2 RoomPos = GetRandomRoomPos(RoomSize);
 
             //Setup a new room component with these random values we just generated
-            DungeonRoom NewRoom = new DungeonRoom(RoomXPos, RoomYPos, RoomWidth, RoomHeight);
+            DungeonRoom NewRoom = new DungeonRoom(RoomPos, RoomSize);
 
             //Check to make sure the room doesnt touch or overlap any other rooms that may already exist
             bool InvalidPlacement = false;
             foreach(DungeonRoom OtherRoom in Rooms)
             {
                 //Half the current placement attempt if this room placement is invalid
-                if(NewRoom.RoomsOverlapping(OtherRoom))
+                if(NewRoom.RoomsOverlapping(OtherRoom) && !NewRoom.RoomsAdjacent(OtherRoom))
                 {
                     InvalidPlacement = true;
                     break;
@@ -152,6 +169,123 @@ public class Dungeon : MonoBehaviour
                 return;
             }
         }
+    }
+
+    //Places down the first room in the center of the dungeon grid
+    private void PlaceFirstRoom(int MinSize, int MaxSize)
+    {
+        Vector2 RoomSize = GetRandomRoomSize(MinSize, MaxSize);
+        Vector2 RoomPos = new Vector2(Width * 0.5f, Height * 0.5f);
+        RoomPos.x -= RoomSize.x / 2;
+        RoomPos.y -= RoomSize.y / 2;
+        DungeonRoom NewRoom = new DungeonRoom(RoomPos, RoomSize);
+        NewRoom.Init();
+        Rooms.Add(NewRoom);
+    }
+
+    //Checks if a new room of the given size can be placed adjacent to the given already existing room in the given direction
+    private bool CanPlaceAdjacent(Vector2 NewRoomSize, DungeonRoom OtherRoom, Direction PlacementDirection)
+    {
+        //Get the location where the new room would be placed
+        Vector2 AdjacentPos = OtherRoom.GetAdjacentLocation(NewRoomSize, PlacementDirection);
+
+        //Make sure the new room will be contained inside the current dungeon grid
+        if (!RoomLocationValid(AdjacentPos, NewRoomSize))
+            return false;
+
+        //Make sure a room placed at this new location doesnt overlap with any of the other already existing rooms
+        DungeonRoom NewRoom = new DungeonRoom(AdjacentPos, NewRoomSize);
+        if (RoomOverlaps(NewRoom))
+            return false;
+
+        //Return true if the new room doesnt overlap with any others
+        return true;
+    }
+
+    //Checks if a room can be placed at a given location with the given size and still remain inside the current dungeon grid
+    private bool RoomLocationValid(Vector2 RoomLocation, Vector2 RoomSize)
+    {
+        if (RoomLocation.x < 0 ||
+            RoomLocation.y < 0 ||
+            RoomLocation.x + RoomSize.x >= Width ||
+            RoomLocation.y + RoomSize.y >= Height)
+            return false;
+        return true;
+    }
+
+    //Tries randomly placing a new room into the current dungeon grid up to a maximum of 10 times before it gives up, makes sure this rooms is placed right next to one of the others
+    private void TryPlaceCompactedRoom(int MinRoomSize, int MaxRoomSize)
+    {
+        //Get a random size for the new room thats going to be placed down
+        Vector2 RoomSize = GetRandomRoomSize(MinRoomSize, MaxRoomSize);
+
+        //Create a shuffled copy of the rooms list to use when searching for an adjacent location to place the new room
+        List<DungeonRoom> RoomsCopy = ListFunctions.Copy(Rooms);
+        ListFunctions.Shuffle(RoomsCopy);
+
+        //Go through each room which already exists, and try placing a new room adjacent to it on one of its 4 sides
+        //If a new room cant be placed on any of its 4 sides, go on to the next room in the list
+        foreach(DungeonRoom OtherRoom in RoomsCopy)
+        {
+            //Create a list with the 4 directions we want to check on, so they can be taken from it at random
+            List<Direction> CheckDirections = new List<Direction>();
+            for (int i = 0; i < 4; i++)
+                CheckDirections.Add((Direction)i);
+            ListFunctions.Shuffle(CheckDirections);
+
+            //Store valid placement direction here once its found
+            Direction PlacementDirection = Direction.North;
+            bool DirectionFound = false;
+
+            //Check each direction in the list until we find a valid location to place the new room, or run out of sides to check for
+            foreach(Direction CheckDirection in CheckDirections)
+            {
+                //Store the placement direction and stop searching once a valid placement location has been found
+                if (CanPlaceAdjacent(RoomSize, OtherRoom, CheckDirection))
+                {
+                    PlacementDirection = CheckDirection;
+                    DirectionFound = true;
+                    break;
+                }
+            }
+
+            //Setup the new room and add it into the dungeon if we were able to find a valid location to place it at
+            if(DirectionFound)
+            {
+                Vector2 NewRoomPos = OtherRoom.GetAdjacentLocation(RoomSize, PlacementDirection);
+                DungeonRoom NewRoom = new DungeonRoom(NewRoomPos, RoomSize);
+                NewRoom.Init();
+                Rooms.Add(NewRoom);
+                return;
+            }
+        }
+    }
+
+    //Checks if the given room overlaps with any of the already existing rooms
+    private bool RoomOverlaps(DungeonRoom NewRoom)
+    {
+        foreach(DungeonRoom OtherRoom in Rooms)
+        {
+            if (NewRoom.RoomsOverlapping(OtherRoom))
+                return true;
+        }
+        return false;
+    }
+
+    //Returns a random size within the given range to use as the size for a new room
+    private Vector2 GetRandomRoomSize(int MinSize, int MaxSize)
+    {
+        return new Vector2(
+            Random.Range(MinSize, MaxSize + 1),
+            Random.Range(MinSize, MaxSize + 1));
+    }
+
+    //Returns a random position to place a new room in the dungeon
+    private Vector2 GetRandomRoomPos(Vector2 RoomSize)
+    {
+        return new Vector2(
+            Random.Range(RoomSize.x, Width - RoomSize.x - 1),
+            Random.Range(RoomSize.y, Height - RoomSize.y - 1));
     }
 
     //Creates a horizontal corridor to connect two rooms together

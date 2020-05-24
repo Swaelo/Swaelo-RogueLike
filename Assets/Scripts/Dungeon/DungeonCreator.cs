@@ -29,7 +29,22 @@ public class DungeonCreator : MonoBehaviour
     private int MinRoomSize = 0;    //Minimum size of the rooms that will be generated
     private Vector2 MinRoomSizeRange = new Vector2(2, 6);   //Allowed value range for minimum room size
     private int MaxRoomSize = 0;    //Maximum size of the rooms that will be generated
-    private Vector2 MaxRoomSizeRange = new Vector2(3, 10);  //Allowed value range for maximum room size
+    private Vector2 MaxRoomSizeRange = new Vector2(2, 10);  //Allowed value range for maximum room size
+
+    //Quick setup values
+    public bool QuickSetup = false;
+    public int QuickSetupWidth = 16;
+    public int QuickSetupHeight = 16;
+
+    private void Start()
+    {
+        if(QuickSetup)
+        {
+            Dungeon.Instance.InitializeGrid(QuickSetupWidth, QuickSetupHeight);
+            RoomPlacementUIWindow.SetActive(true);
+            GridSetup = true;
+        }
+    }
 
     //Keeps entered width/height values inside the allowable size range values
     public void GridDimensionsUpdated()
@@ -103,15 +118,27 @@ public class DungeonCreator : MonoBehaviour
         }
     }
 
-    //Places down rooms onto the dungeon grid
-    public void ClickCreateRooms()
+    //Places down rooms onto the dungeon grid, spaced apart and connected by corridors
+    public void ClickCreateSpacedRooms()
+    {
+        if (FieldsFilledValid())
+            Dungeon.Instance.PlaceRoomsSpaced(MaxRoomCount, MinRoomSize, MaxRoomSize);
+    }
+
+    //Places down rooms onto the dungeon grid, all sitting directly adjacent to one another
+    public void ClickCreateCompactedRooms()
+    {
+        if (FieldsFilledValid())
+            Dungeon.Instance.PlaceRoomsTouching(MaxRoomCount, MinRoomSize, MaxRoomSize);
+    }
+
+    //Makes sure all fields have been filled out, and with valid values before creating the dungeon rooms
+    private bool FieldsFilledValid()
     {
         //Make sure fields have been filled out, and contain valid values
         bool FieldsEmpty = MaxRoomCount == 0 || MinRoomSize == 0 || MaxRoomSize == 0;
         bool SizesValid = MinRoomSize <= MaxRoomSize && MaxRoomSize >= MinRoomSize;
 
-        //Generate the rooms if all validation tests have passed
-        if (!FieldsEmpty && SizesValid)
-            Dungeon.Instance.PlaceRooms(MaxRoomCount, MinRoomSize, MaxRoomSize);
+        return !FieldsEmpty && SizesValid;
     }
 }
