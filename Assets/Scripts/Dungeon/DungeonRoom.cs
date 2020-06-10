@@ -4,6 +4,7 @@
 // Author:	    Harley Laurie https://www.github.com/Swaelo/
 // ================================================================================================================================
 
+using System.Collections.Generic;
 using UnityEngine;
 
 public class DungeonRoom
@@ -14,6 +15,39 @@ public class DungeonRoom
 
     private Vector2 XRange; //X Axis grid coordinates for furthest Left/Right cells of the room
     private Vector2 YRange; //Y Axis grid coordinates for furthest Bottom/Top cells of the room
+
+    public Dictionary<Vector2, DungeonTile> Tiles = new Dictionary<Vector2, DungeonTile>(); //All the tiles used to make up this dungeon room
+
+    //Returns a list of the tiles which make up one of the walls of this room (does not include the corner tiles)
+    public List<DungeonTile> GetWallTiles(Direction RoomSide)
+    {
+        //Make a new list to store the wall tiles
+        List<DungeonTile> WallTiles = new List<DungeonTile>();
+
+        //Add the tiles to the list based on which side was requested
+        switch(RoomSide)
+        {
+            case (Direction.North):
+                for (int i = 2; i < RoomSize.x; i++)
+                    WallTiles.Add(Tiles[new Vector2(i, RoomSize.y)]);
+                break;
+            case (Direction.East):
+                for (int i = 2; i < RoomSize.y; i++)
+                    WallTiles.Add(Tiles[new Vector2(RoomSize.x, i)]);
+                break;
+            case (Direction.South):
+                for (int i = 2; i < RoomSize.x; i++)
+                    WallTiles.Add(Tiles[new Vector2(i, 1)]);
+                break;
+            case (Direction.West):
+                for (int i = 2; i < RoomSize.y; i++)
+                    WallTiles.Add(Tiles[new Vector2(1, i)]);
+                break;
+        }
+        
+        //Return the final list of wall tiles
+        return WallTiles;
+    }
 
     //Constructor
     public DungeonRoom(Vector2 Position, Vector2 Size)
@@ -36,6 +70,10 @@ public class DungeonRoom
     //Sets up the room to be displayed
     public void Init()
     {
+        //Track the row and column coordinates of each tile in relation to its position in this room of the dungeon
+        int Column = 1;
+        int Row = 1;
+
         //Change all the tiles which make up this room into room types
         for (int x = (int)XRange.x; x < (int)XRange.y; x++)
         {
@@ -43,6 +81,14 @@ public class DungeonRoom
             {
                 //Grab the tile being initialised
                 DungeonTile Tile = Dungeon.Instance.Tiles[new Vector2(x, y)];
+
+                //Tell the tile its coordinates inside this room, and which room it belongs to
+                Vector2 TilePos = new Vector2(Column, Row);
+                Tile.RoomPos = TilePos;
+                Tile.Room = this;
+
+                //Store this tile in the dictionary of tiles used to make up this room
+                Tiles.Add(new Vector2(Column, Row), Tile);
 
                 //Check which side of the room this tile lies on
                 bool IsLeft = x == (int)XRange.x;
@@ -78,7 +124,11 @@ public class DungeonRoom
                 //Middle Tile
                 else
                     Tile.SetType(DungeonTile.TileType.RoomMiddleTile);
+
+                Row++;
             }
+            Column++;
+            Row = 1;
         }
     }
 

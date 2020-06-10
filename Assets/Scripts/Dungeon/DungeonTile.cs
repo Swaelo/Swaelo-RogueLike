@@ -5,6 +5,7 @@
 // ================================================================================================================================
 
 using UnityEngine;
+using UnityEngine.UI;
 
 public class DungeonTile : MonoBehaviour
 {
@@ -21,7 +22,8 @@ public class DungeonTile : MonoBehaviour
         RoomBottomLeftTile = 7,
         RoomLeftTile = 8,
         RoomTopLeftTile = 9,
-        CorridorTile = 10
+        CorridorTile = 10,
+        RoomDoor = 11
     }
 
     //Stores the sprites for each tile type
@@ -34,6 +36,18 @@ public class DungeonTile : MonoBehaviour
     public TileSprite[] TileSprites;
 
     public Vector2 GridPos; //Tiles coordinates in the dungeon grid
+    public Vector2 RoomPos; //Tiles coordinates in the dungeon room it belongs to
+    public DungeonRoom Room;    //The room this tile belongs to
+
+    public DungeonRoom DestinationRoom; //If this tile is a door, this is the room that the player will travel to if they go through the door
+    public DungeonTile DestinationTile; //If this tile is a door, this is the tile that the player will travel to if they go through the door
+
+    public BoxCollider2D TileCollider;
+    public void ToggleCollider(bool Enable)
+    {
+        TileCollider.enabled = Enable;
+    }
+    private void Awake() { ToggleCollider(false); }
 
     //Changes the tile between types and updates its sprite
     public TileType Type = TileType.EmptyTile;   //This tiles current type
@@ -50,8 +64,41 @@ public class DungeonTile : MonoBehaviour
             if(TSprite.Type == NewType)
             {
                 Renderer.sprite = TSprite.Sprite;
-                return;
+                ToggleCollider(NewType);
+                break;
             }
         }
+
+        //Update the tiles tag
+        if (NewType == TileType.RoomDoor)
+            gameObject.tag = "Door";
+        else if (NewType == TileType.RoomBottomLeftTile ||
+            NewType == TileType.RoomBottomRightTile ||
+            NewType == TileType.RoomBottomTile ||
+            NewType == TileType.RoomLeftTile ||
+            NewType == TileType.RoomRightTile ||
+            NewType == TileType.RoomTopLeftTile ||
+            NewType == TileType.RoomTopRightTile ||
+            NewType == TileType.RoomTopTile)
+            gameObject.tag = "Wall";
+        else if (NewType == TileType.RoomMiddleTile)
+            gameObject.tag = "Floor";
+        else
+            gameObject.tag = "Empty";
+    }
+
+    //Toggles the tiles box collider based on its new type
+    private void ToggleCollider(TileType NewType)
+    {
+        bool SolidTile = NewType == TileType.RoomTopTile ||
+            NewType == TileType.RoomTopRightTile ||
+            NewType == TileType.RoomRightTile ||
+            NewType == TileType.RoomBottomRightTile ||
+            NewType == TileType.RoomBottomTile ||
+            NewType == TileType.RoomBottomLeftTile ||
+            NewType == TileType.RoomLeftTile ||
+            NewType == TileType.RoomTopLeftTile;// ||
+            //NewType == TileType.RoomDoor;
+        ToggleCollider(SolidTile);
     }
 }

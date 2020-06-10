@@ -18,6 +18,9 @@ public class Dungeon : MonoBehaviour
     //Dungeons size, room count, etc.
     public int Width;
     public int Height;
+    public int MaxRooms;
+    public int RoomMinSize;
+    public int RoomMaxSize;
 
     //Lists of tiles and rooms which make up the dungeon
     public Dictionary<Vector2, DungeonTile> Tiles = new Dictionary<Vector2, DungeonTile>();   //Set of all the tiles which make up this dungeon
@@ -27,6 +30,13 @@ public class Dungeon : MonoBehaviour
 
     //Keeps track if rooms have already been placed down, so if told to generate them again we will know to clean up the previous rooms first
     private bool RoomsCreated = false;
+
+    private void Start()
+    {
+        InitializeGrid(Width, Height);
+        PlaceRoomsTouching(MaxRooms, RoomMinSize, RoomMaxSize);
+        Player.Instance.SetHidden(false);
+    }
 
     //Sets up the dungeon tiles
     public void InitializeGrid(int DungeonWidth, int DungeonHeight)
@@ -252,10 +262,14 @@ public class Dungeon : MonoBehaviour
             //Setup the new room and add it into the dungeon if we were able to find a valid location to place it at
             if(DirectionFound)
             {
+                //Place a new room at the available location that was found
                 Vector2 NewRoomPos = OtherRoom.GetAdjacentLocation(RoomSize, PlacementDirection);
                 DungeonRoom NewRoom = new DungeonRoom(NewRoomPos, RoomSize);
+                //Initialize the new room and store it in the list with all the others
                 NewRoom.Init();
                 Rooms.Add(NewRoom);
+                //Place doors to connect the new room with the room that it was placed next to
+                ConnectRooms(OtherRoom, NewRoom, PlacementDirection);
                 return;
             }
         }
@@ -320,5 +334,126 @@ public class Dungeon : MonoBehaviour
             if (Tile.Type == DungeonTile.TileType.EmptyTile)
                 Tile.SetType(DungeonTile.TileType.CorridorTile);
         }
+    }
+
+    //Connects two adjacent dungeon rooms by placing doors to travel between them
+    private void ConnectRooms(DungeonRoom ExistingRoom, DungeonRoom NewRoom, Direction PlacementDirection)
+    {
+        //Create two lists to contain the wall tiles for each of the two rooms we are going to connect together
+        List<DungeonTile> ExistingRoomWallTiles = new List<DungeonTile>();
+        List<DungeonTile> NewRoomWallTiles = new List<DungeonTile>();
+
+
+        //Place two doors in between the two rooms to connect them together
+        switch(PlacementDirection)
+        {
+            case (Direction.North):
+                //Grab the north wall tiles of the existing room and the south wall tiles of the new room
+                ExistingRoomWallTiles = ExistingRoom.GetWallTiles(Direction.North);
+                NewRoomWallTiles = NewRoom.GetWallTiles(Direction.South);
+                break;
+            case (Direction.East):
+                //Grab the east wall of the existing room, and west of the new room
+                ExistingRoomWallTiles = ExistingRoom.GetWallTiles(Direction.East);
+                NewRoomWallTiles = NewRoom.GetWallTiles(Direction.West);
+                break;
+            case (Direction.South):
+                //South for existing, north for new
+                ExistingRoomWallTiles = ExistingRoom.GetWallTiles(Direction.South);
+                NewRoomWallTiles = NewRoom.GetWallTiles(Direction.North);
+                break;
+            case (Direction.West):
+                //West for existing, east for new
+                ExistingRoomWallTiles = ExistingRoom.GetWallTiles(Direction.West);
+                NewRoomWallTiles = NewRoom.GetWallTiles(Direction.East);
+                break;
+        }
+
+        //Now place doors somewhere along these walls to connect the two rooms together
+        AddDoors(ExistingRoom, ExistingRoomWallTiles, NewRoom, NewRoomWallTiles, PlacementDirection);
+    }
+
+    //Places doors along the two rooms adjacent walls to link them together
+    private void AddDoors(DungeonRoom FirstRoom, List<DungeonTile> FirstRoomWallTiles, DungeonRoom SecondRoom, List<DungeonTile> SecondRoomWallTiles, Direction ConnectionDirection)
+    {
+
+        //Keep grabbing a tile from the first rooms wall, until we find one that can be connected to the adjacent room
+        bool RoomsConnected = false;
+        while(!RoomsConnected)
+        {
+            //Grab a tile from the first rooms wall which is most towards the center of that room
+            int FirstWallSelection = (FirstRoomWallTiles.Count - 1) / 2;
+            DungeonTile FirstRoomTile = FirstRoomWallTiles[FirstWallSelection];
+
+            //Remove this tile from the list so if this placement attempt fails, we dont try using the same tile again
+            FirstRoomWallTiles.Remove(FirstRoomTile);
+
+            //Grab whatever tile is adjacent to this one in the direction of the new room, check if that adjacent tile is one of the second rooms wall tiles
+            DungeonTile AdjacentRoomTile = GetAdjacentTile(FirstRoomTile, ConnectionDirection);
+            bool DoesConnect = SecondRoomWallTiles.Contains(AdjacentRoomTile);
+
+            //If the adjacent tile is part of the second rooms wall, then link them all together
+            if (DoesConnect)
+            {
+                //Stop searching for a place to connect these two rooms
+                RoomsConnected = true;
+
+                //Change both tiles to door tiles
+                FirstRoomTile.SetType(DungeonTile.TileType.RoomDoor);
+                AdjacentRoomTile.SetType(DungeonTile.TileType.RoomDoor);
+
+                //Set the destination room for each door to the adjacent room
+                FirstRoomTile.DestinationRoom = SecondRoom;
+                AdjacentRoomTile.DestinationRoom = FirstRoom;
+
+                //Find and set the destination tiles for each door
+                FirstRoomTile.DestinationTile = GetAdjacentTile(AdjacentRoomTile, ConnectionDirection);
+                AdjacentRoomTile.DestinationTile = GetReverseAdjacentTile(FirstRoomTile, ConnectionDirection);
+            }
+        }
+    }
+
+    //Returns the dungeon tile 1 space away in the given direction
+    public DungeonTile GetAdjacentTile(DungeonTile Target, Direction AdjacentDirection)
+    {
+        Vector2 TilePos = Target.GridPos;
+        switch(AdjacentDirection)
+        {
+            case (Direction.North):
+                TilePos.y++;
+                break;
+            case (Direction.East):
+                TilePos.x++;
+                break;
+            case (Direction.South):
+                TilePos.y--;
+                break;
+            case (Direction.West):
+                TilePos.x--;
+                break;
+        }
+        return Tiles[TilePos];
+    }
+
+    //Returns the dungeon tile 1 space away in the opposite of the given direction
+    public DungeonTile GetReverseAdjacentTile(DungeonTile Target, Direction AdjacentDirection)
+    {
+        Vector2 TilePos = Target.GridPos;
+        switch (AdjacentDirection)
+        {
+            case (Direction.North):
+                TilePos.y--;
+                break;
+            case (Direction.East):
+                TilePos.x--;
+                break;
+            case (Direction.South):
+                TilePos.y++;
+                break;
+            case (Direction.West):
+                TilePos.x++;
+                break;
+        }
+        return Tiles[TilePos];
     }
 }
