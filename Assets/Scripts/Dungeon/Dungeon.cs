@@ -343,7 +343,6 @@ public class Dungeon : MonoBehaviour
         List<DungeonTile> ExistingRoomWallTiles = new List<DungeonTile>();
         List<DungeonTile> NewRoomWallTiles = new List<DungeonTile>();
 
-
         //Place two doors in between the two rooms to connect them together
         switch(PlacementDirection)
         {

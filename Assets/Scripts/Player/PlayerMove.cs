@@ -13,6 +13,15 @@ public class PlayerMove : MonoBehaviour
     public float MoveSpeed = 1.5f;  //How fast the player moves
     private Vector3 PreviousPos = Vector3.zero;    //Previous frames position
 
+    //Directions the player is able to face
+    private Vector2 NorthDirection = new Vector2(0f, -1f);
+    private Vector2 EastDirection = new Vector2(-1f, 0f);
+    private Vector2 SouthDirection = new Vector2(0f, 1f);
+    private Vector2 WestDirection = new Vector2(1f, 0f);
+
+    //Keep track of which direction the player is currently facing
+    public Direction FacingDirection = Direction.East;
+
     private void Awake() { PreviousPos = transform.position; }  //Store initial location as previous
 
     private void Update()
@@ -41,44 +50,44 @@ public class PlayerMove : MonoBehaviour
         bool IsMoving = transform.position != PreviousPos;
         AnimationController.SetBool("IsMoving", IsMoving);
 
-        //Change between front/back/side view modes depending on which direction the player is moving
-        if(IsMoving)
+        //Find current direction vector pointing from the player towards the crosshair
+        Vector3 CursorPos = CursorLocation.Instance.Get();
+        Vector3 PlayerToCrosshairDirection = Vector3.Normalize(transform.position - CursorPos);
+
+        //Measure the crosshair direction against the directions the player is able to face
+        float NorthAngle = Vector3.Angle(PlayerToCrosshairDirection, NorthDirection);
+        float EastAngle = Vector3.Angle(PlayerToCrosshairDirection, EastDirection);
+        float SouthAngle = Vector3.Angle(PlayerToCrosshairDirection, SouthDirection);
+        float WestAngle = Vector3.Angle(PlayerToCrosshairDirection, WestDirection);
+
+        //Face the player north/south when moving up or down
+        if (NorthAngle <= EastAngle && NorthAngle <= SouthAngle && NorthAngle <= WestAngle)
         {
-            //Measure distance travelled in each direction since last frame
-            float VertMovement = Mathf.Abs(transform.position.y - PreviousPos.y);
-            float HoriMovement = Mathf.Abs(transform.position.x - PreviousPos.x);
+            //Face the player north
+            FacingDirection = Direction.North;
+            AnimationController.SetBool("FacingSide", false);
+            AnimationController.SetBool("FacingForward", false);
+            AnimationController.SetBool("FacingBack", true);
+        }
+        else if (SouthAngle <= NorthAngle && SouthAngle <= EastAngle && SouthAngle <= WestAngle)
+        {
+            //Face the player south
+            FacingDirection = Direction.South;
+            AnimationController.SetBool("FacingSide", false);
+            AnimationController.SetBool("FacingBack", false);
+            AnimationController.SetBool("FacingForward", true);
+        }
+        else
+        {
+            //Otherwise face the player sideways
+            AnimationController.SetBool("FacingForward", false);
+            AnimationController.SetBool("FacingBack", false);
+            AnimationController.SetBool("FacingSide", true);
 
-            //Set front/back view when moving vertically
-            if(VertMovement > HoriMovement)
-            {
-                //Moving Up
-                if (transform.position.y > PreviousPos.y)
-                {
-                    AnimationController.SetBool("FacingSide", false);
-                    AnimationController.SetBool("FacingForward", false);
-                    AnimationController.SetBool("FacingBack", true);
-                }
-                //Moving Down
-                else if(transform.position.y < PreviousPos.y)
-                {
-                    AnimationController.SetBool("FacingSide", false);
-                    AnimationController.SetBool("FacingBack", false);
-                    AnimationController.SetBool("FacingForward", true);
-                }
-            }
-            //Set side view when moving horizontally
-            else
-            {
-                AnimationController.SetBool("FacingForward", false);
-                AnimationController.SetBool("FacingBack", false);
-                AnimationController.SetBool("FacingSide", true);
-
-                //Flip sprites vertically when moving to the left
-                if (transform.position.x < PreviousPos.x)
-                    Renderer.flipX = true;
-                else if (transform.position.x > PreviousPos.x)
-                    Renderer.flipX = false;
-            }
+            //And flip their sprite when moving west
+            bool FacingWest = WestAngle <= NorthAngle && WestAngle <= EastAngle && WestAngle <= SouthAngle;
+            FacingDirection = FacingWest ? Direction.West : Direction.East;
+            Renderer.flipX = FacingWest;
         }
     }
 }
