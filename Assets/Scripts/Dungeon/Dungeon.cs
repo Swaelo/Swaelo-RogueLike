@@ -5,9 +5,7 @@
 // ================================================================================================================================
 
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 
 public class Dungeon : MonoBehaviour
 {

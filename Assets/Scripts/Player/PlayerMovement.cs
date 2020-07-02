@@ -1,12 +1,12 @@
 ﻿// ================================================================================================================================
-// File:        PlayerMove.cs
+// File:        PlayerMovement.cs
 // Description:	Allows the player to move around
 // Author:	    Harley Laurie https://www.github.com/Swaelo/
 // ================================================================================================================================
 
 using UnityEngine;
 
-public class PlayerMove : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
     public SpriteRenderer Renderer;
     public Animator AnimationController;    //Used to control the players animations
