@@ -19,9 +19,4 @@ public class Player : MonoBehaviour
         gameObject.SetActive(!Hide);
         Hidden = Hide;
     }
-
-    private void Start()
-    {
-        SetHidden(true);
-    }
 }

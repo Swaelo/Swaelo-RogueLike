@@ -26,7 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169</NoWarn>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -35,7 +35,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169</NoWarn>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <NoConfig>true</NoConfig>
@@ -75,12 +75,12 @@
     <Compile Include="Assets\Scripts\AI\Nodes\SequenceNode.cs" />
     <Compile Include="Assets\Scripts\CursorLocation.cs" />
     <Compile Include="Assets\Scripts\Direction.cs" />
-    <Compile Include="Assets\Scripts\Dungeon New\DungeonGenerator.cs" />
-    <Compile Include="Assets\Scripts\Dungeon New\NewDungeonTile.cs" />
-    <Compile Include="Assets\Scripts\Dungeon\Dungeon.cs" />
-    <Compile Include="Assets\Scripts\Dungeon\DungeonCreator.cs" />
+    <Compile Include="Assets\Scripts\Dungeon\DungeonGenerator.cs" />
     <Compile Include="Assets\Scripts\Dungeon\DungeonRoom.cs" />
     <Compile Include="Assets\Scripts\Dungeon\DungeonTile.cs" />
+    <Compile Include="Assets\Scripts\Dungeon\DungeonTileManager.cs" />
+    <Compile Include="Assets\Scripts\Dungeon\DungeonTileSprites.cs" />
+    <Compile Include="Assets\Scripts\Dungeon\DungeonTileType.cs" />
     <Compile Include="Assets\Scripts\ListFunctions.cs" />
     <Compile Include="Assets\Scripts\MenuButtonFunctions.cs" />
     <Compile Include="Assets\Scripts\Player\Player.cs" />

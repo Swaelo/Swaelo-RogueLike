@@ -1,129 +1,79 @@
 ﻿// ================================================================================================================================
 // File:        DungeonRoom.cs
-// Description:	Defines a room in the dungeon
+// Description:	
 // Author:	    Harley Laurie https://www.github.com/Swaelo/
 // ================================================================================================================================
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class DungeonRoom
 {
-    public Vector2 RoomSize;    //Width and Height of the room
-    public Vector2 RoomPos; //Rooms grid coordinates
+    public int RoomWidth;
+    public int RoomHeight;
+    public Vector2 RoomPos; //The grid position of the top left tile in this room
     public Vector2 Center;  //Center point of the room
+    public Dictionary<Vector2, DungeonTile> RoomTiles = new Dictionary<Vector2, DungeonTile>();
+    private Vector2 XRange; //X Axis grid coordinates for furthest left and right tiles of the room
+    private Vector2 YRange; //Y Axis grid coordinates for furthest left and right tiles of the room
 
-    private Vector2 XRange; //X Axis grid coordinates for furthest Left/Right cells of the room
-    private Vector2 YRange; //Y Axis grid coordinates for furthest Bottom/Top cells of the room
-
-    public Dictionary<Vector2, DungeonTile> Tiles = new Dictionary<Vector2, DungeonTile>(); //All the tiles used to make up this dungeon room
-
-    //Returns a list of the tiles which make up one of the walls of this room (does not include the corner tiles)
-    public List<DungeonTile> GetWallTiles(Direction RoomSide)
+    public DungeonRoom(int Width, int Height, Vector2 RoomPos)
     {
-        //Make a new list to store the wall tiles
-        List<DungeonTile> WallTiles = new List<DungeonTile>();
+        //Store size and position values
+        this.RoomPos = RoomPos;
+        RoomWidth = Width;
+        RoomHeight = Height;
 
-        //Add the tiles to the list based on which side was requested
-        switch(RoomSide)
-        {
-            case (Direction.North):
-                for (int i = 2; i < RoomSize.x; i++)
-                    WallTiles.Add(Tiles[new Vector2(i, RoomSize.y)]);
-                break;
-            case (Direction.East):
-                for (int i = 2; i < RoomSize.y; i++)
-                    WallTiles.Add(Tiles[new Vector2(RoomSize.x, i)]);
-                break;
-            case (Direction.South):
-                for (int i = 2; i < RoomSize.x; i++)
-                    WallTiles.Add(Tiles[new Vector2(i, 1)]);
-                break;
-            case (Direction.West):
-                for (int i = 2; i < RoomSize.y; i++)
-                    WallTiles.Add(Tiles[new Vector2(1, i)]);
-                break;
-        }
-        
-        //Return the final list of wall tiles
-        return WallTiles;
-    }
+        //Find and store X/Y range coordinates
+        XRange = new Vector2(RoomPos.x, RoomPos.x + RoomWidth);
+        YRange = new Vector2(RoomPos.y, RoomPos.y + RoomHeight);
 
-    //Constructor
-    public DungeonRoom(Vector2 Position, Vector2 Size)
-    {
-        //Store size and pos values
-        RoomPos = Position;
-        RoomSize = Size;
-
-        //Get and store the rooms X/Y ranges
-        XRange = new Vector2(RoomPos.x, RoomPos.x + RoomSize.x);
-        YRange = new Vector2(RoomPos.y, RoomPos.y + RoomSize.y);
-
-        //Find and store center location
+        //Find the center location of this room
         Center = new Vector2(
-            Mathf.Floor((RoomPos.x + (RoomPos.x + RoomSize.x)) / 2),
-            Mathf.Floor((RoomPos.y + (RoomPos.y + RoomSize.y)) / 2));
-
+            Mathf.Floor((RoomPos.x + (RoomPos.x + RoomWidth)) / 2),
+            Mathf.Floor((RoomPos.y + (RoomPos.y + RoomHeight)) / 2));
     }
 
-    //Sets up the room to be displayed
     public void Init()
     {
         //Track the row and column coordinates of each tile in relation to its position in this room of the dungeon
         int Column = 1;
         int Row = 1;
 
-        //Change all the tiles which make up this room into room types
+        //Change all the tiles which make up this room into their set room types
         for (int x = (int)XRange.x; x < (int)XRange.y; x++)
         {
-            for (int y = (int)YRange.x; y < (int)YRange.y; y++)
+            for(int y = (int)YRange.x; y < (int)YRange.y; y++)
             {
-                //Grab the tile being initialised
-                DungeonTile Tile = Dungeon.Instance.Tiles[new Vector2(x, y)];
+                //Grab the tile being initialised, store it in this rooms tile dictionary
+                DungeonTile Tile = DungeonGenerator.Instance.DungeonTiles[new Vector2(x, y)];
+                RoomTiles.Add(new Vector2(Column, Row), Tile);
 
-                //Tell the tile its coordinates inside this room, and which room it belongs to
-                Vector2 TilePos = new Vector2(Column, Row);
-                Tile.RoomPos = TilePos;
-                Tile.Room = this;
-
-                //Store this tile in the dictionary of tiles used to make up this room
-                Tiles.Add(new Vector2(Column, Row), Tile);
-
-                //Check which side of the room this tile lies on
                 bool IsLeft = x == (int)XRange.x;
                 bool IsRight = x == ((int)XRange.y) - 1;
                 bool IsBottom = y == (int)YRange.x;
                 bool IsTop = y == ((int)YRange.y) - 1;
 
                 //Set the tiles type based on which sides of the room its on
-                //Top-Left Corner
                 if (IsTop && IsLeft && !IsRight && !IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomTopLeftTile);
-                //Top Wall
+                    Tile.SetType(DungeonTileType.TopLeftWall);
                 else if (IsTop && !IsLeft && !IsRight && !IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomTopTile);
-                //Top-Right Corner
+                    Tile.SetType(DungeonTileType.TopWall);
                 else if (IsTop && !IsLeft && IsRight && !IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomTopRightTile);
-                //Right Wall
+                    Tile.SetType(DungeonTileType.TopRightWall);
                 else if (!IsTop && !IsLeft && IsRight && !IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomRightTile);
-                //Bottom-Right Corner
+                    Tile.SetType(DungeonTileType.RightWall);
                 else if (!IsTop && !IsLeft && IsRight && IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomBottomRightTile);
-                //Bottom Wall
+                    Tile.SetType(DungeonTileType.BottomRightWall);
                 else if (!IsTop && !IsLeft && !IsRight && IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomBottomTile);
-                //Bottom-Left Corner
+                    Tile.SetType(DungeonTileType.BottomWall);
                 else if (!IsTop && IsLeft && !IsRight && IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomBottomLeftTile);
-                //Left Wall
+                    Tile.SetType(DungeonTileType.BottomLeftWall);
                 else if (!IsTop && IsLeft && !IsRight && !IsBottom)
-                    Tile.SetType(DungeonTile.TileType.RoomLeftTile);
-                //Middle Tile
+                    Tile.SetType(DungeonTileType.LeftWall);
                 else
-                    Tile.SetType(DungeonTile.TileType.RoomMiddleTile);
+                    Tile.SetType(DungeonTileType.Floor);
 
                 Row++;
             }
@@ -132,57 +82,86 @@ public class DungeonRoom
         }
     }
 
-    //Checks to see if this room is overlapping with the other
-    public bool RoomsOverlapping(DungeonRoom Other)
-    {
-        return XRange.x < Other.XRange.x + Other.RoomSize.y &&
-            XRange.x + RoomSize.x > Other.XRange.x &&
-            YRange.x < Other.YRange.x + Other.RoomSize.y &&
-            YRange.x + RoomSize.y > Other.YRange.x;
-    }
-
-    //Checks if this room is sitting adjacent to the other
-    public bool RoomsAdjacent(DungeonRoom Other)
-    {
-        //Return false if the rooms are overlapping one another
-        if (RoomsOverlapping(Other))
-            return false;
-
-        //Check if the rooms are adjacent to each other on the X axis
-        bool AdjacentLeft = XRange.x - 1 == Other.XRange.y;
-        bool AdjacentRight = XRange.y + 1 == Other.XRange.y;
-        //Check if the rooms are adjacent to each other on the Y axis
-        bool AdjacentDown = YRange.x - 1 == Other.YRange.x;
-        bool AdjacentUp = YRange.y + 1 == Other.YRange.y;
-
-        //Return true if the rooms are adjacent on any side
-        return AdjacentLeft || AdjacentRight || AdjacentDown || AdjacentUp;
-    }
-
-    //Returns the grid coordinates of where a room should be placed to be adjacent to this on any specific side
-    public Vector2 GetAdjacentLocation(Vector2 AdjacentRoomSize, Direction RoomDirection)
+    //Returns the coordinates of where a new room should be placed to be adjacent to this in the given direction
+    public Vector2 GetAdjacentLocation(int Width, int Height, Direction Placement)
     {
         //Start with the location of the current room
-        Vector2 AdjacentRoomPos = RoomPos;
+        Vector2 AdjacentPos = RoomPos;
 
-        //Offset from this location in the given direction
-        switch (RoomDirection)
+        //Offset from this location in the given placement direction
+        switch(Placement)
         {
             case (Direction.North):
-                AdjacentRoomPos.y += RoomSize.y;
+                AdjacentPos.y += RoomHeight;
                 break;
             case (Direction.East):
-                AdjacentRoomPos.x += RoomSize.x;
+                AdjacentPos.x += RoomWidth;
                 break;
             case (Direction.South):
-                AdjacentRoomPos.y -= AdjacentRoomSize.y;
+                AdjacentPos.y -= Height;
                 break;
             case (Direction.West):
-                AdjacentRoomPos.x -= AdjacentRoomSize.x;
+                AdjacentPos.x -= Width;
                 break;
         }
 
-        //Return the final adjacent room location
-        return AdjacentRoomPos;
+        //Return the adjacent rooms placement location
+        return AdjacentPos;
+    }
+
+    //Checks to see if this room overlaps with the other given room
+    public bool RoomsOverlapping(DungeonRoom Other)
+    {
+        return XRange.x < Other.XRange.x + Other.RoomHeight &&
+            XRange.x + RoomWidth > Other.XRange.x &&
+            YRange.x < Other.YRange.x + Other.RoomHeight &&
+            YRange.x + RoomHeight > Other.YRange.x;
+    }
+
+    //Returns a list of the tiles which make up one of the walls of this room (does not include the wall corners)
+    public List<DungeonTile> GetWallTiles(Direction RoomSide)
+    {
+        //Make a new list to store the wall tiles
+        List<DungeonTile> WallTiles = new List<DungeonTile>();
+
+        //Add the tiles to the list based on which side was given
+        switch (RoomSide)
+        {
+            case (Direction.North):
+                for (int i = 2; i < RoomWidth; i++)
+                {
+                    Vector2 TilePos = new Vector2(i, RoomHeight);
+                    if (RoomTiles.ContainsKey(TilePos))
+                        WallTiles.Add(RoomTiles[TilePos]);
+                }
+                break;
+            case (Direction.East):
+                for (int i = 2; i < RoomHeight; i++)
+                {
+                    Vector2 TilePos = new Vector2(RoomWidth, i);
+                    if (RoomTiles.ContainsKey(TilePos))
+                        WallTiles.Add(RoomTiles[TilePos]);
+                }
+                break;
+            case (Direction.South):
+                for (int i = 2; i < RoomWidth; i++)
+                {
+                    Vector2 TilePos = new Vector2(i, 1);
+                    if (RoomTiles.ContainsKey(TilePos))
+                        WallTiles.Add(RoomTiles[TilePos]);
+                }
+                break;
+            case (Direction.West):
+                for (int i = 2; i < RoomHeight; i++)
+                {
+                    Vector2 TilePos = new Vector2(1, i);
+                    if (RoomTiles.ContainsKey(TilePos))
+                        WallTiles.Add(RoomTiles[TilePos]);
+                }
+                break;
+        }
+
+        //Return the final list of wall tiles
+        return WallTiles;
     }
 }
