@@ -17,6 +17,7 @@ public class DungeonGenerator : MonoBehaviour
     public int RoomCount = 8;   //Number of rooms that will be created to make up this floor of the dungeon
     public Vector2 RoomSizeRange = new Vector2(5, 15);  //Each rooms length/width will fall within these values
     public int GridSize = 128;  //Dimensions of the grid layout which the dungeon is created on top of
+    public Vector2 StartRoomSize = new Vector2(8, 8);   //Size of the players starting room
 
     //Prefabs
     public GameObject DungeonTilePrefab;
@@ -25,12 +26,17 @@ public class DungeonGenerator : MonoBehaviour
     //Current dungeon
     public Dungeon CurrentDungeon;
 
+    //Debug variables
+    public bool PlaceExtraRooms = true;
+
     private void Start()
     {
         GameObject NewDungeon = Instantiate(DungeonPrefab, Vector3.zero, Quaternion.identity);
         CurrentDungeon = NewDungeon.GetComponent<Dungeon>();
         CurrentDungeon.SetGenerationValues(GridSize, RoomCount, RoomSizeRange);
         CurrentDungeon.InitializeTileGrid();
-        CurrentDungeon.PlaceRooms();
+        CurrentDungeon.PlaceStartingRoom(StartRoomSize);
+        if (PlaceExtraRooms)
+            CurrentDungeon.PlaceRandomRooms();
     }
 }

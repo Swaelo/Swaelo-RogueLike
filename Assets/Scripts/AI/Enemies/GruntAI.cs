@@ -7,6 +7,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerDistanceCheck))]
+[RequireComponent(typeof(AttackPlayer))]
+[RequireComponent(typeof(MoveTowardPlayer))]
 public class GruntAI : MonoBehaviour
 {
     //Root level node
@@ -20,16 +23,17 @@ public class GruntAI : MonoBehaviour
 
     private void Start()
     {
-        //Instantiate behaviour tree nodes from the bottom up, and assign the children in that order
         IsPlayerInRange = new ActionNode(GetComponent<PlayerDistanceCheck>().PerformPlayerDistanceCheck);
         AttackPlayer = new ActionNode(GetComponent<AttackPlayer>().PerformAttackPlayer);
         List<Node> SequenceChildren = new List<Node>();
         SequenceChildren.Add(IsPlayerInRange);
         SequenceChildren.Add(AttackPlayer);
+        AttackIfInRange = new SequenceNode(SequenceChildren);
         SeekPlayer = new ActionNode(GetComponent<MoveTowardPlayer>().PerformMoveTowardPlayer);
         List<Node> RootChildren = new List<Node>();
         RootChildren.Add(AttackIfInRange);
         RootChildren.Add(SeekPlayer);
+        RootNode = new SelectorNode(RootChildren);
     }
 
     private void Update()

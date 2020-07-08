@@ -9,6 +9,8 @@ TagManager:
   - Door
   - Floor
   - Empty
+  - Grunt
+  - Enemy
   layers:
   - Default
   - TransparentFX

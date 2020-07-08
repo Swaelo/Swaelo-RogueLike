@@ -49,25 +49,22 @@ public class Dungeon : MonoBehaviour
         }
     }
 
-    //Randomly places down all the rooms to create the layout of the dungeon
-    public void PlaceRooms()
-    {
-        //Place the starting room, then the rest of the rooms randomly
-        PlaceStartingRoom();
-        for (int i = 1; i < RoomCount; i++)
-            PlaceRandomRoom();
-    }
-
     //Places a beginning room in the center of the dungeon grid where the player will start at
-    private void PlaceStartingRoom()
+    public void PlaceStartingRoom(Vector2 RoomSize)
     {
-        Vector2 RoomSize = new Vector2(8, 8);
         Vector2 RoomPos = new Vector2(GridSize * 0.5f, GridSize * 0.5f);
         RoomPos.x -= RoomSize.x / 2;
         RoomPos.y -= RoomSize.y / 2;
         DungeonRoom FirstRoom = new DungeonRoom((int)RoomSize.x, (int)RoomSize.y, RoomPos);
         FirstRoom.Init();
         Rooms.Add(FirstRoom);
+    }
+
+    //Places the rest of the rooms randomly
+    public void PlaceRandomRooms()
+    {
+        for (int i = 1; i < RoomCount; i++)
+            PlaceRandomRoom();
     }
 
     //Places a room randomly next to one of the already existing rooms
