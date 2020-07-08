@@ -39,6 +39,11 @@ public class BulletTravel : MonoBehaviour
             DropBullet();
         else if (collision.transform.CompareTag("Door"))
             DropBullet();
+        else if (collision.transform.CompareTag("Enemy"))
+        {
+            collision.gameObject.SendMessage("Damage");
+            Destroy(gameObject);
+        }
     }
 
     //Drops the bullet onto the ground and triggers the BulletFade to destroy it a few moments later
