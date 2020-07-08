@@ -31,7 +31,7 @@ public class DungeonTile
         if(!TileInitialised)
         {
             TileInitialised = true;
-            TileObject = GameObject.Instantiate(DungeonGenerator.Instance.DungeonTilePrefab, WorldPos, Quaternion.identity);
+            TileObject = GameObject.Instantiate(DungeonGenerator.Instance.DungeonTilePrefab, WorldPos, Quaternion.identity, DungeonGenerator.Instance.CurrentDungeon.transform);
         }
 
         //Update the tiles sprite to match the new type given

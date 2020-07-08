@@ -408,7 +408,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 10
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -594,6 +594,9 @@ MonoBehaviour:
   GridSize: 512
   DungeonTilePrefab: {fileID: 6538293524517129627, guid: 4c38a6273b835f84f9dc132d784cc58f,
     type: 3}
+  DungeonPrefab: {fileID: 312330442924853852, guid: 5761daac3f261e34d9dd4d1958413e43,
+    type: 3}
+  CurrentDungeon: {fileID: 0}
 --- !u!114 &1527189155
 MonoBehaviour:
   m_ObjectHideFlags: 0

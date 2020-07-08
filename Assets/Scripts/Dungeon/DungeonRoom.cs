@@ -47,7 +47,7 @@ public class DungeonRoom
             for(int y = (int)YRange.x; y < (int)YRange.y; y++)
             {
                 //Grab the tile being initialised, store it in this rooms tile dictionary
-                DungeonTile Tile = DungeonGenerator.Instance.DungeonTiles[new Vector2(x, y)];
+                DungeonTile Tile = DungeonGenerator.Instance.CurrentDungeon.Tiles[new Vector2(x, y)];
                 RoomTiles.Add(new Vector2(Column, Row), Tile);
 
                 bool IsLeft = x == (int)XRange.x;
